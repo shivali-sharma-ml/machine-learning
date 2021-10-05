@@ -1,0 +1,182 @@
+---
+title: "project on DT"
+---
+
+```{r}
+setwd('F:/resume_project/3 Decision Tree/Dataset')
+data<-read.csv('mushrooms.csv')
+View(data)
+str(data)
+```
+#missing values
+```{r}
+sum(is.na(data))
+```
+
+there is no missing value in the data
+
+
+#case mismatch treatment
+```{r}
+require(dplyr)
+data<-mutate_if(data,is.character,tolower)
+```
+#univariate analysis
+```{r}
+table(data$class)
+```
+
+since both the categories have approximately same number of observations so it is balance class problem
+```{r}
+table(data$cap.shape)
+```
+
+
+```{r}
+table(data$stalk.shape)
+```
+
+```{r}
+require(dplyr)
+table(data$habitat)
+sapply(data,n_distinct)
+```
+
+
+since outliers doesnot have much impact on decision tree  so we move further
+
+
+
+#to split the data into train and validation part
+```{r}
+library(caTools)
+set.seed(0)
+
+i <- sample.split(data$class, SplitRatio = 0.75)
+
+train <- data[i,]
+val <- data[!i,]
+
+
+```
+
+
+#to fit dt algorith
+```{r}
+require(rpart)
+tree_m1 <- rpart(class ~ ., data = train)
+
+summary(tree_m1)
+
+```
+
+```{r}
+require(rpart.plot)
+
+prp(tree_m1)
+
+```
+
+
+#prediction of class using model
+```{r}
+
+pred_class <- predict(tree_m1, newdata = val)
+
+summary(pred_class[ ,1])
+
+```
+
+
+
+# Calculating the optimal probalility cutoff.
+
+```{r}
+
+pred_prob <- pred_class[,1]
+
+actual_label <- as.factor(val$class)
+
+s <- seq(min(pred_prob), max(pred_prob), length = 300)
+
+out_put <- data.frame(Sensitivity = rep(0, 300), 
+                      Specificity = rep(0, 300), 
+                      Accuracy  = rep(0, 300))
+
+
+```
+
+
+```{r}
+# Creating custom function to find cutoff probability at which
+# sensitivity, specificity and overall accuracy are all equal.
+
+cutoff_finder <- function(cutoff) {
+                  require(caret)
+                  predicted_label <- as.factor(ifelse(pred_prob > cutoff, "e", "p"))
+                  conf <- confusionMatrix(predicted_label, actual_label, positive = "e")
+                  out <- c(conf$byClass[1], conf$byClass[2], conf$overall[1]) 
+                  return(out) }
+
+for(i in 1:300) {out_put[i, ] <- cutoff_finder(s[i])}
+
+
+```
+
+
+#to choose which cutoff to be considered
+```{r}
+
+cutoff <- s[which(abs(out_put$Sensitivity - out_put$Specificity) == 
+                      min(abs(out_put$Sensitivity - out_put$Specificity)))]
+cutoff
+
+```
+
+
+
+
+```{r}
+
+val$pred_class <- ifelse(pred_class[ ,1] > 0.499, 'e', 'p')
+
+```
+
+
+```{r}
+
+require(caret)
+confusionMatrix(as.factor(val$pred_class), 
+                as.factor(val$class),
+                positive = 'e')
+
+
+```
+
+# since dt are rigid and proneto overfit so to overcome this problem we do some hyperparameter tunning
+
+
+```{r}
+tree_m2<-rpart(class~.,data=train,control=rpart.control(cp=0.02))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+prp(tree_m2)
+prp(tree_m1)
+```
+
+
+
+```{r}
+pred_class <- predict(tree_m2, newdata = val)
+
+pred_cl <- ifelse(pred_class[ ,1] > 0.499, 'e', 'p')
+
+confusionMatrix(as.factor(pred_cl), 
+                as.factor(val$class),
+                positive = 'e')
+
+
+```
