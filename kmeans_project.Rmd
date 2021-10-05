@@ -1,0 +1,533 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+setwd('F:/resume_project/k_means_clustering/KMeans/Dataset')
+
+```
+
+```{r}
+require(readr)
+data<-read_csv('data.csv')
+```
+```{r}
+str(data)
+```
+
+
+```{r}
+head(data)
+```
+
+
+```{r}
+colSums(is.na(data))
+```
+
+
+```{r}
+data$Joined<-NULL
+data$`Loaned From`<-NULL
+data$`Contract Valid Until`<-NULL
+data$LS<-NULL
+data$ST<-NULL
+data$RS<-NULL
+data$LW<-NULL
+data$LF<-NULL
+data$CF<-NULL
+data$RF<-NULL
+data$LAM<-NULL
+data$CAM<-NULL
+data$RAM<-NULL
+data$LM<-NULL
+data$LCM<-NULL
+data$CM<-NULL
+data$RCM<-NULL
+data$RM<-NULL
+data$LWB<-NULL
+data$LDM<-NULL
+data$CDM<-NULL
+data$RDM<-NULL
+data$RWB<-NULL
+data$LB<-NULL
+data$LCB<-NULL
+data$CB<-NULL
+data$RCB<-NULL
+data$RB<-NULL
+data$`Release Clause`<-NULL
+data$Club<-NULL
+data$Position<-NULL
+
+
+```
+
+#there may be the case that players are new that they didnt play any match that's why there #many attributes are missing but we cant omit all these  players as they are in large #number so better to remove all those variables 
+
+
+```{r}
+data<-na.omit(data)
+```
+#as there are only 48 missing values so we can ommit them as it doesnot lead to loss of much information and its better to remove then to put false information
+
+
+```{r}
+colSums(is.na(data))
+```
+
+
+```{r}
+require(dplyr)
+
+data<-mutate_if(data,is.character,tolower)
+data<-distinct(data)
+
+
+```
+
+
+
+```{r}
+Overall_gp<-group_by(data,ID)%>% summarise(Overall_gp=mean(Overall))
+```
+
+
+
+```{r}
+potential<-group_by(data,ID)%>% summarise(potential=mean(Potential))
+```
+
+
+
+```{r}
+aggression<-group_by(data,ID)%>% summarise(aggression=mean(Aggression))
+```
+
+
+
+```{r}
+agility<-group_by(data,ID)%>% summarise(agility=mean(Agility))
+```
+
+
+```{r}
+Age<-group_by(data,ID)%>% summarise(Age=mean(Age))
+```
+
+
+```{r}
+dribbling<-group_by(data,ID)%>% summarise(dribbling=mean(Dribbling))
+```
+
+
+```{r}
+volleys<-group_by(data,ID)%>% summarise(volleys=median(Volleys))
+```
+
+
+```{r}
+acc<-group_by(data,ID)%>% summarise(acc=median(Acceleration))
+```
+
+```{r}
+GKPos<-group_by(data,ID)%>% summarise(GKPos=mean(GKPositioning))
+```
+
+
+```{r}
+Tackle<-group_by(data,ID)%>% summarise(Tackle=mean(StandingTackle))
+```
+
+```{r}
+new_data<- merge(potential,Overall_gp, by = 'ID')
+
+new_data <- merge(new_data, aggression, by = 'ID')
+
+
+new_data <- merge(new_data, agility, by = 'ID')
+
+new_data <- merge(new_data, acc, by = 'ID')
+
+new_data <- merge(new_data,Age, by = 'ID')
+new_data <- merge(new_data,GKPos , by = 'ID')
+new_data <- merge(new_data,dribbling , by = 'ID')
+new_data <- merge(new_data,Tackle , by = 'ID')
+new_data <- merge(new_data,volleys , by = 'ID')
+new_data <- merge(new_data, potential, by = 'ID')
+
+```
+
+
+
+```{r}
+new_data[,-1] <- sapply(new_data[,-1], scale)
+
+```
+
+
+#missing values
+```{r}
+colSums(is.na(new_data))
+```
+
+
+Outlier treatment
+
+aggression
+
+```{r}
+plot(quantile(new_data$aggression, seq(0, 1, 0.01)),na.rm=T)
+quantile(new_data$aggression, seq(0, 1, 0.01))
+
+```
+
+seems like no as such outliers
+
+
+
+
+overall_gp
+
+```{r}
+plot(quantile(new_data$Overall_gp, seq(0, 1, 0.01)))
+quantile(new_data$Overall_gp, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$Overall_gp[new_data$Overall_gp >  2.43409363    ] <-  2.43409363   
+new_data$Overall_gp[new_data$Overall_gp < -2.27550756  ] <- -2.27550756  
+
+```
+
+
+
+#potential
+
+```{r}
+plot(quantile(new_data$potential.x, seq(0, 1, 0.01)))
+quantile(new_data$potential.x, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$potential.x[new_data$potential.x < -2.06038531 ] <- -2.06038531
+new_data$potential.x[new_data$potential.x > 2.54911377 ] <- 2.54911377
+
+```
+
+
+agility
+
+```{r}
+plot(quantile(new_data$agility, seq(0, 1, 0.01)))
+quantile(new_data$agility, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$agility[new_data$agility < -2.70810237 ] <- -2.70810237
+
+```
+
+
+#Age
+```{r}
+plot(quantile(new_data$Age, seq(0, 1, 0.01)))
+quantile(new_data$Age, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$Age[new_data$Age > 2.417961719 ] <- 2.417961719
+
+```
+
+
+#acc
+```{r}
+plot(quantile(new_data$acc, seq(0, 1, 0.01)))
+quantile(new_data$acc, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$acc[new_data$acc < -2.972905929  ] <- -2.972905929
+
+```
+
+#GKPos
+```{r}
+plot(quantile(new_data$GKPos, seq(0, 1, 0.01)))
+quantile(new_data$GKPos, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$GKPos[new_data$GKPos > 1.776679304 ] <- 1.776679304
+new_data$GKPos[new_data$GKPos < -1.795654722 ] <- -1.795654722
+```
+
+# dribbling
+```{r}
+plot(quantile(new_data$dribbling, seq(0, 1, 0.01)))
+quantile(new_data$dribbling, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$dribbling[new_data$dribbling < -2.84449585 ] <- -2.84449585
+
+new_data$dribbling[new_data$dribbling > 1.87100469 ] <- 1.87100469
+
+```
+
+#Tackle
+```{r}
+plot(quantile(new_data$Tackle, seq(0, 1, 0.01)))
+quantile(new_data$Tackle, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$Tackle[new_data$Tackle > 1.569149383 ] <- 1.569149383
+
+```
+
+#volleys
+```{r}
+plot(quantile(new_data$volleys, seq(0, 1, 0.01)))
+quantile(new_data$volleys, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$volleys[new_data$volleys < -1.87695480 ] <- -1.87695480
+
+```
+
+#potential.y
+```{r}
+plot(quantile(new_data$potential.y, seq(0, 1, 0.01)))
+quantile(new_data$potential.y, seq(0, 1, 0.01))
+
+```
+
+```{r}
+new_data$potential.y[new_data$potential.y > 2.54911377 ] <-  2.54911377
+
+new_data$potential.y[new_data$potential.y < -2.06038531 ] <-  -2.06038531
+
+```
+
+
+
+outliers treated
+
+Implementing K-Means algorithm
+
+Finding the optimal value of K
+
+```{r}
+r_sq <- rep(0, 30)
+r_sq
+
+for (number in 1:30) { 
+          cluster_k <- kmeans(new_data[,-1], centers = number, nstart = 20, iter.max = 50)
+          r_sq[number] <- cluster_k$betweenss/cluster_k$totss }
+
+```
+
+
+```{r}
+plot(r_sq, type = 'l')
+
+points(r_sq, col = 'blue')
+
+```
+
+
+
+```{r}
+
+# cluster 3 
+
+clusters_3 <- kmeans(new_data[,c(2:12)],centers = 3,iter.max = 50, nstart = 20)
+  
+new_data$cluster3 <- as.factor(clusters_3$cluster)
+clusters_3$centers
+table(clusters_3$cluster)
+
+
+
+
+```
+
+```{r}
+# cluster 4 
+
+clusters_4 <- kmeans(new_data[,c(2:12)],centers = 4,iter.max = 50, nstart = 20)
+
+new_data$cluster4 <- as.factor(clusters_4$cluster)
+clusters_4$centers
+table(clusters_4$cluster)
+```
+
+
+
+```{r}
+
+# cluster 5 
+
+clusters_5 <- kmeans(new_data[,c(2:12)],centers = 5,iter.max = 50, nstart = 20)
+
+new_data$cluster5 <- as.factor(clusters_5$cluster)
+clusters_5$centers
+table(clusters_5$cluster)
+
+
+
+```
+
+```{r}
+# try fviz_cluster for visualization
+require(cluster)
+require(factoextra)
+
+
+new_data$cluster3 <- as.numeric(new_data$cluster3)
+new_data$cluster4 <- as.numeric(new_data$cluster4)
+new_data$cluster5 <- as.numeric(new_data$cluster5)
+
+fviz_cluster(clusters_3,data = new_data)
+fviz_cluster(clusters_4,data = new_data)
+fviz_cluster(clusters_5,data = new_data)
+
+
+```
+from graph it is clear that cluster 3 is performing much better than cluster4 and cluster5
+
+```{r}
+# See clusters behavior
+
+require(dplyr)
+df <- group_by(new_data, cluster3) %>% summarise(avg_overall_gp = mean(Overall_gp),
+                                      avg_pot.x = mean(potential.x),
+                                      avg_pot.y = mean(potential.y),
+                                      avg_agg = mean(aggression),
+                                      avg_agility = mean(agility),
+                                      avg_acc = mean(acc),
+                                      avg_age = mean(Age),
+                                      avg_GKPos= mean(GKPos),
+                                      avg_dribb = mean(dribbling),
+                                      avg_Tackle = mean(Tackle),
+                                      avg_vol = mean(volleys))
+
+df
+
+```
+
+```{r}
+
+# May be by visualizing we get the clear idea also
+require(ggplot2)
+ggplot(df, aes(x = avg_overall_gp, y = avg_pot.x,
+               size = avg_agg,color=avg_agility)) + geom_point() +geom_label(aes(label=cluster3))
+
+
+```
+
+```{r}
+# See clusters behavior
+
+require(dplyr)
+df_4 <- group_by(new_data, cluster4) %>%  summarise(avg_overall_gp = mean(Overall_gp),
+                                      avg_pot.x = mean(potential.x),
+                                      avg_pot.y = mean(potential.y),
+                                      avg_agg = mean(aggression),
+                                      avg_agility = mean(agility),
+                                      avg_acc = mean(acc),
+                                      avg_age = mean(Age),
+                                      avg_GKPos= mean(GKPos),
+                                      avg_dribb = mean(dribbling),
+                                      avg_Tackle = mean(Tackle),
+                                      avg_vol = mean(volleys))
+df_4
+
+```
+
+```{r}
+
+# May be by visualizing we get the clear idea also
+require(ggplot2)
+ggplot(df_4, aes(x = avg_overall_gp, y = avg_pot.y,
+               size = avg_agg,color=avg_agility)) + geom_point() +geom_label(aes(label=cluster4))
+
+
+```
+
+
+```{r}
+# See clusters behavior
+
+require(dplyr)
+df_5 <- group_by(new_data, cluster5) %>%  summarise(avg_overall_gp = mean(Overall_gp),
+                                      avg_pot.x = mean(potential.x),
+                                      avg_pot.y = mean(potential.y),
+                                      avg_agg = mean(aggression),
+                                      avg_agility = mean(agility),
+                                      avg_acc = mean(acc),
+                                      avg_age = mean(Age),
+                                      avg_GKPos= mean(GKPos),
+                                      avg_dribb = mean(dribbling),
+                                      avg_Tackle = mean(Tackle),
+                                      avg_vol = mean(volleys))
+
+df_5
+
+```
+
+```{r}
+
+# May be by visualizing we get the clear idea also
+require(ggplot2)
+ggplot(df_5, aes(x = avg_overall_gp, y = avg_pot.y,
+               size = avg_agg,color=avg_agility)) + geom_point() +geom_label(aes(label=cluster5))
+
+
+```
+
+
+
+#from cluster 3 we can have clear cut idea about three different type of players ,players #who belongs to cluster 1 have low avg_overall_gp and avg_potential but high avg_aggression #and agility average is also low
+ 
+ # players from cluster 2 have high avg_overall_gp,avg_aggression and avg_potential but low
+ #avg_agility
+
+
+# and from cluster 3 player ahve high avg_potential and low avg_overall_gp as compared to cluster 1 have high avg_aggression and low avg_agility
+
+
+#so I choose 3 clusters
+
+
+```{r}
+
+require(dplyr)
+df <- group_by(new_data, cluster3) %>% summarise(avg_overall_gp = mean(Overall_gp),
+                                      avg_pot.x = mean(potential.x),
+                                      avg_pot.y = mean(potential.y),
+                                      avg_agg = mean(aggression),
+                                      avg_agility = mean(agility),
+                                      avg_acc = mean(acc),
+                                      avg_age = mean(Age),
+                                      avg_GKPos= mean(GKPos),
+                                      avg_dribb = mean(dribbling),
+                                      avg_Tackle = mean(Tackle),
+                                      avg_vol = mean(volleys))
+
+df
+
+```
